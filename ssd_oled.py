@@ -76,7 +76,7 @@ class OledDisplay(threading.Thread):
 				if cnt > 6:
 					cnt = 0
 					cur_index += 1
-					if cur_index >= node_count:	cur_index = 0
+				if cur_index >= node_count:	cur_index = 0
 				self.display(nodes[cur_index], cur_index, node_count)
 				cnt += 1
 			else:
