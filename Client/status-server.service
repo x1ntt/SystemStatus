@@ -1,0 +1,9 @@
+[Unit]
+Description=ServerStatus-Server
+After=network.target
+[Service]
+ExecStart=/home/pi/startup.sh
+ExecReload=/bin/kill -HUP $MAINPID
+Restart=on-failure
+[Install]
+WantedBy=multi-user.target
