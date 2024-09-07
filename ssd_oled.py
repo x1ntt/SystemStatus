@@ -30,14 +30,25 @@ class OledDisplay(threading.Thread):
 		self.running = True
 		serial = i2c(port=1, address=0x3C)
 		self.device = ssd1306(serial)
+		self.active = True
+		self.tasks = [
+			{"time": [23,0,0], "active": False}, 
+			{"time": [7,0,0], "active": True}
+		]
 
+	def switch_active(self, active):
+		if active != self.active:
+			self.active = active
+			print (f"切换屏幕状态: {active}")
 	
 	def voiddisplay(self):
 		with canvas(self.device) as draw:
+			draw.rectangle(self.device.bounding_box, outline="white", fill="black")
 			draw_text(draw, 0, margin_x, "Not Data")
 
-	def display_all(self, nodes):
-		pass
+	def disable_display(self):
+		with canvas(self.device) as draw:
+			pass
 
 	def display(self, node, cur_index, node_count):
 		with canvas(self.device) as draw:
@@ -62,6 +73,12 @@ class OledDisplay(threading.Thread):
 	def stop(self):
 		self.running = False
 
+	def check_task(self):
+		t = time.localtime()
+		for v in self.tasks:
+			if v['time'][0] == t.tm_hour and v['time'][1] == t.tm_min and v['time'][2] == t.tm_sec:
+				self.switch_active(v['active'])
+
 	def run(self):
 		test_nodes = """
 			{"172.31.166.222":{"cpu":0.1,"disk":[{"path":"/","percent":1.6},{"path":"/snap","percent":1.6}],"hostname":"123","ip":"172.31.166.222","mem":11.1,"ts":1725170648.6713948},"192.168.163.1":{"cpu":0.8,"disk":[],"hostname":"123","ip":"192.168.163.1","mem":48.8,"ts":1725170648.6587808}}
@@ -69,19 +86,23 @@ class OledDisplay(threading.Thread):
 		cnt = 0
 		cur_index = 0
 		while self.running:
-			nodes = list(status.getall_node().values())
-			#nodes = json.loads(test_nodes)
-			node_count = len(nodes)
-			if node_count != 0:
-				if cnt > 6:
-					cnt = 0
-					cur_index += 1
-				if cur_index >= node_count:	cur_index = 0
-				self.display(nodes[cur_index], cur_index, node_count)
-				cnt += 1
+			self.check_task()
+			if self.active:
+				nodes = list(status.getall_node().values())
+				#nodes = json.loads(test_nodes)
+				node_count = len(nodes)
+				if node_count != 0:
+					if cnt > 6:
+						cnt = 0
+						cur_index += 1
+					if cur_index >= node_count:	cur_index = 0
+					self.display(nodes[cur_index], cur_index, node_count)
+					cnt += 1
+				else:
+					pass
+					#self.voiddisplay()
 			else:
-				pass
-				#self.voiddisplay()
+				self.disable_display();
 			time.sleep(0.5)
 
 oled_display = OledDisplay()

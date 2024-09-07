@@ -16,8 +16,22 @@ def update_node():
     node = request.form.get('node')
     if not node:
         return "0"
-    status.update_node(json.loads(node))
+    status.update_node(json.loads(node), str(request.remote_addr))
     return "0"
+
+@app.route('/api/update/oled', methods=['GET'])
+def update_oled_status():
+	active = request.args.get('active')
+	print (str(request.form))
+	if active not in ['true', 'false']:
+		return "1"
+
+	if active == "true":
+		active = True
+	else:
+		active = False
+	oled_display.switch_active(active)
+	return "0";
 
 @app.route('/')
 def index():
