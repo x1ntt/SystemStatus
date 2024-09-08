@@ -41,34 +41,31 @@ class OledDisplay(threading.Thread):
 			self.active = active
 			print (f"切换屏幕状态: {active}")
 	
-	def voiddisplay(self):
-		with canvas(self.device) as draw:
-			draw.rectangle(self.device.bounding_box, outline="white", fill="black")
-			draw_text(draw, 0, margin_x, "Not Data")
+	def voiddisplay(self, draw):
+		draw.rectangle(self.device.bounding_box, outline="white", fill="black")
+		draw_text(draw, 0, margin_x, "Not Data")
 
-	def disable_display(self):
-		with canvas(self.device) as draw:
-			pass
+	def disable_display(self, draw):
+		print ("disable_display")
 
-	def display(self, node, cur_index, node_count):
-		with canvas(self.device) as draw:
-			draw.rectangle(self.device.bounding_box, outline="white", fill="black")
-			draw_text(draw, 0, margin_x-2, f"{node['ip']},{cur_index+1}/{node_count}")
+	def display(self, draw, node, cur_index, node_count):
+		draw.rectangle(self.device.bounding_box, outline="white", fill="black")
+		draw_text(draw, 0, margin_x-2, f"{node['ip']},{cur_index+1}/{node_count}")
 
-			#draw_text(draw, 1, margin_x, f"Cpu:       {node['cpu']}%")
-			draw_text(draw, 1, margin_x, f"Cpu:")
-			draw_bar(draw, 1, node['cpu'], margin_x+25, 128-5)
+		#draw_text(draw, 1, margin_x, f"Cpu:       {node['cpu']}%")
+		draw_text(draw, 1, margin_x, f"Cpu:")
+		draw_bar(draw, 1, node['cpu'], margin_x+25, 128-5)
 
-			#draw_text(draw, 2, margin_x, f"Mem:       {node['mem']}%")
-			draw_text(draw, 2, margin_x, f"Mem:")
-			draw_bar(draw, 2, node['mem'], margin_x+25, 128-5)
+		#draw_text(draw, 2, margin_x, f"Mem:       {node['mem']}%")
+		draw_text(draw, 2, margin_x, f"Mem:")
+		draw_bar(draw, 2, node['mem'], margin_x+25, 128-5)
 
-			draw_text(draw, 3, margin_x, f"Disk: ")
-			cnt = 0
-			for disk in node['disk']:
-				draw_text(draw, 4+cnt, margin_x+4, f"{disk['path']}", font_s)
-				draw_bar(draw, 4+cnt, disk['percent'], margin_x+45, 128-5)
-				cnt += 1
+		draw_text(draw, 3, margin_x, f"Disk: ")
+		cnt = 0
+		for disk in node['disk']:
+			draw_text(draw, 4+cnt, margin_x+4, f"{disk['path']}", font_s)
+			draw_bar(draw, 4+cnt, disk['percent'], margin_x+45, 128-5)
+			cnt += 1
 
 	def stop(self):
 		self.running = False
@@ -80,30 +77,28 @@ class OledDisplay(threading.Thread):
 				self.switch_active(v['active'])
 
 	def run(self):
-		test_nodes = """
-			{"172.31.166.222":{"cpu":0.1,"disk":[{"path":"/","percent":1.6},{"path":"/snap","percent":1.6}],"hostname":"123","ip":"172.31.166.222","mem":11.1,"ts":1725170648.6713948},"192.168.163.1":{"cpu":0.8,"disk":[],"hostname":"123","ip":"192.168.163.1","mem":48.8,"ts":1725170648.6587808}}
-		"""
 		cnt = 0
 		cur_index = 0
 		while self.running:
+			s_ts = time.time()
 			self.check_task()
-			if self.active:
-				nodes = list(status.getall_node().values())
-				#nodes = json.loads(test_nodes)
-				node_count = len(nodes)
-				if node_count != 0:
-					if cnt > 6:
-						cnt = 0
-						cur_index += 1
-					if cur_index >= node_count:	cur_index = 0
-					self.display(nodes[cur_index], cur_index, node_count)
-					cnt += 1
+			nodes = list(status.getall_node().values())
+			with canvas(self.device) as draw:
+				if self.active:
+					node_count = len(nodes)
+					if node_count != 0:
+						if cnt > 6:
+							cnt = 0
+							cur_index += 1
+						if cur_index >= node_count:	cur_index = 0
+						self.display(draw, nodes[cur_index], cur_index, node_count)
+						cnt += 1
+					else:
+						self.voiddisplay(draw)
 				else:
-					pass
-					#self.voiddisplay()
-			else:
-				self.disable_display();
+					self.disable_display(draw);
 			time.sleep(0.5)
+			print (f"time: {time.time() - s_ts}")
 
 oled_display = OledDisplay()
 
