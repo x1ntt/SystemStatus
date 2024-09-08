@@ -22,7 +22,6 @@ def update_node():
 @app.route('/api/update/oled', methods=['GET'])
 def update_oled_status():
 	active = request.args.get('active')
-	print (str(request.form))
 	if active not in ['true', 'false']:
 		return "1"
 
@@ -39,5 +38,5 @@ def index():
 
 if __name__ == '__main__':
 	oled_display.start()
-	app.run(debug=True, host='0.0.0.0')
+	app.run(debug=False, host='0.0.0.0')
 	oled_display.stop()
