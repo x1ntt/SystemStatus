@@ -30,7 +30,12 @@ def update_oled_status():
 	else:
 		active = False
 	oled_display.switch_active(active)
-	return "0";
+	return "0"
+
+@app.route('/api/set/shutdown')
+def shutdown():
+	os.system("poweroff")
+    return "0"
 
 @app.route('/')
 def index():
